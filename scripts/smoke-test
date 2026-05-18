@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "$tmpdir"' EXIT
+
+sample="$tmpdir/source.txt"
+printf 'sample content\n' >"$sample"
+
+bash -n "$repo_root/bin/waystone"
+"$repo_root/bin/waystone" --help >/dev/null
+WAYSTONE_DIR="$tmpdir/state" WAYSTONE_FILE="$tmpdir/state/paths.tsv" "$repo_root/bin/waystone" add "$sample" Sample >/dev/null
+WAYSTONE_DIR="$tmpdir/state" WAYSTONE_FILE="$tmpdir/state/paths.tsv" "$repo_root/bin/waystone" list | grep -q 'Sample'
+WAYSTONE_DIR="$tmpdir/state" WAYSTONE_FILE="$tmpdir/state/paths.tsv" FZF_DEFAULT_OPTS='--filter Sample --no-sort' "$repo_root/bin/waystone" /usr/bin/true
+
+if command -v shellcheck >/dev/null 2>&1; then
+  shellcheck "$repo_root/bin/waystone" "$repo_root/install.sh"
+fi
+
+printf 'waystone smoke test passed\n'
