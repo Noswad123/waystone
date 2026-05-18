@@ -10,6 +10,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Syntax check
-        run: bash -n bin/waystone install.sh scripts/smoke-test
+        run: bash -n bin/waystone install.sh scripts/smoke-test completions/bash/waystone && zsh -n completions/zsh/_waystone
       - name: Smoke test
         run: scripts/smoke-test

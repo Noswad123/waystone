@@ -20,6 +20,21 @@ By default this installs to `~/.local/bin`. Override with:
 WAYSTONE_BIN_DIR=/usr/local/bin ./install.sh
 ```
 
+Completions install by default to:
+
+```text
+~/.local/share/zsh/site-functions/_waystone
+~/.local/share/bash-completion/completions/waystone
+```
+
+Override or disable completion installation with:
+
+```bash
+WAYSTONE_ZSH_COMPLETION_DIR=/path/to/site-functions ./install.sh
+WAYSTONE_BASH_COMPLETION_DIR=/path/to/bash-completion ./install.sh
+WAYSTONE_INSTALL_COMPLETIONS=0 ./install.sh
+```
+
 ## Usage
 
 ```bash

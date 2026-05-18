@@ -1,0 +1,64 @@
+#compdef waystone
+
+_waystone() {
+  local -a subcommands openers
+
+  subcommands=(
+    'add:save a path with an optional label'
+    'capture:save stdin or clipboard content as a waystone'
+    'import:add newline-delimited paths from stdin'
+    'list:print saved waystones'
+    'pick:fuzzy-pick a waystone and copy its path'
+    'open:fuzzy-pick a waystone and open it'
+    'remove:fuzzy-select waystones to remove'
+    'rm:fuzzy-select waystones to remove'
+    'prune:remove waystones whose paths no longer exist'
+    'edit:open the TSV registry in $EDITOR'
+    'relabel:update a selected waystone label'
+    'label:update a selected waystone label'
+    'note:update a selected waystone note'
+    'move:move selected path and update its waystone'
+    'mv:move selected path and update its waystone'
+    'help:show help'
+  )
+
+  openers=(
+    'nvim:open selected path with Neovim'
+    'vim:open selected path with Vim'
+    'less:open selected path with less'
+    'bat:open selected path with bat'
+    'yazi:open selected path with Yazi'
+  )
+
+  case $CURRENT in
+    2)
+      _alternative \
+        'subcommands:subcommand:_describe -t subcommands "subcommands" subcommands' \
+        'openers:opener:_describe -t openers "openers" openers' \
+        'commands:command:_command_names'
+      ;;
+    *)
+      case "${words[2]}" in
+        add)
+          _arguments '1:path:_files' '2:label:'
+          ;;
+        open)
+          _alternative \
+            'openers:opener:_describe -t openers "openers" openers' \
+            'commands:command:_command_names'
+          ;;
+        move|mv)
+          _arguments '1:destination directory:_files -/'
+          ;;
+        relabel|label|note|capture)
+          _message 'text'
+          ;;
+        *)
+          _files
+          ;;
+      esac
+      ;;
+  esac
+}
+
+_waystone "$@"
