@@ -7,8 +7,10 @@ zsh_completion_dir="${WAYSTONE_ZSH_COMPLETION_DIR:-$HOME/.local/share/zsh/site-f
 bash_completion_dir="${WAYSTONE_BASH_COMPLETION_DIR:-$HOME/.local/share/bash-completion/completions}"
 install_completions="${WAYSTONE_INSTALL_COMPLETIONS:-1}"
 
+cargo build --release --manifest-path "$repo_root/Cargo.toml"
+
 mkdir -p "$bin_dir"
-install -m 0755 "$repo_root/bin/waystone" "$bin_dir/waystone"
+install -m 0755 "$repo_root/target/release/waystone" "$bin_dir/waystone"
 printf 'installed waystone -> %s/waystone\n' "$bin_dir"
 
 if [[ "$install_completions" != "0" ]]; then

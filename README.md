@@ -10,6 +10,8 @@ wisp waystone nvim
 
 ## Install
 
+Requires a Rust toolchain for source installs.
+
 ```bash
 ./install.sh
 ```
@@ -61,6 +63,7 @@ WAYSTONE_FILE=/path/to/paths.tsv waystone list
 
 ## Dependencies
 
+- Rust/Cargo to build from source
 - `fzf`
 - macOS `pbcopy` for clipboard support
 - optional openers like `nvim`, `less`, `bat`, `yazi`

@@ -5,11 +5,17 @@ on:
   pull_request:
 
 jobs:
-  shell:
+  rust:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Syntax check
-        run: bash -n bin/waystone install.sh scripts/smoke-test completions/bash/waystone && zsh -n completions/zsh/_waystone
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Format check
+        run: cargo fmt --check
+      - name: Test
+        run: cargo test
+      - name: Shell syntax check
+        run: bash -n install.sh scripts/smoke-test completions/bash/waystone && zsh -n completions/zsh/_waystone
       - name: Smoke test
         run: scripts/smoke-test

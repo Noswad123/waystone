@@ -4,20 +4,29 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
+bin="$repo_root/target/debug/waystone"
 
 sample="$tmpdir/source.txt"
 printf 'sample content\n' >"$sample"
 
-bash -n "$repo_root/bin/waystone"
+cargo test --manifest-path "$repo_root/Cargo.toml"
+cargo build --manifest-path "$repo_root/Cargo.toml"
 bash -n "$repo_root/completions/bash/waystone"
 zsh -n "$repo_root/completions/zsh/_waystone"
-"$repo_root/bin/waystone" --help >/dev/null
-WAYSTONE_DIR="$tmpdir/state" WAYSTONE_FILE="$tmpdir/state/paths.tsv" "$repo_root/bin/waystone" add "$sample" Sample >/dev/null
-WAYSTONE_DIR="$tmpdir/state" WAYSTONE_FILE="$tmpdir/state/paths.tsv" "$repo_root/bin/waystone" list | grep -q 'Sample'
-WAYSTONE_DIR="$tmpdir/state" WAYSTONE_FILE="$tmpdir/state/paths.tsv" FZF_DEFAULT_OPTS='--filter Sample --no-sort' "$repo_root/bin/waystone" /usr/bin/true
+"$bin" --help >/dev/null
+WAYSTONE_DIR="$tmpdir/state" WAYSTONE_FILE="$tmpdir/state/paths.tsv" "$bin" add "$sample" Sample >/dev/null
+list_output="$(WAYSTONE_DIR="$tmpdir/state" WAYSTONE_FILE="$tmpdir/state/paths.tsv" "$bin" list)"
+case "$list_output" in
+  *Sample*) ;;
+  *) printf 'expected Sample in list output\n' >&2; exit 1 ;;
+esac
+
+if command -v fzf >/dev/null 2>&1; then
+  WAYSTONE_DIR="$tmpdir/state" WAYSTONE_FILE="$tmpdir/state/paths.tsv" FZF_DEFAULT_OPTS='--filter Sample --no-sort' "$bin" /usr/bin/true
+fi
 
 if command -v shellcheck >/dev/null 2>&1; then
-  shellcheck "$repo_root/bin/waystone" "$repo_root/install.sh" "$repo_root/completions/bash/waystone"
+  shellcheck "$repo_root/install.sh" "$repo_root/completions/bash/waystone"
 fi
 
 printf 'waystone smoke test passed\n'
