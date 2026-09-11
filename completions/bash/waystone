@@ -4,7 +4,7 @@ _waystone_completion() {
   cur="${COMP_WORDS[COMP_CWORD]}"
   subcommand="${COMP_WORDS[1]:-}"
 
-  local subcommands="add capture import list pick open remove rm prune edit relabel label note move mv help --help -h"
+  local subcommands="add capture import list pick select open remove rm prune edit relabel label note move mv help --help -h"
   local openers="nvim vim less bat yazi"
 
   if [[ $COMP_CWORD -eq 1 ]]; then
@@ -23,6 +23,11 @@ _waystone_completion() {
         COMPREPLY=( $(compgen -W "$openers" -- "$cur") )
       else
         COMPREPLY=( $(compgen -f -- "$cur") )
+      fi
+      ;;
+    select)
+      if [[ $COMP_CWORD -eq 2 ]]; then
+        COMPREPLY=( $(compgen -W "--action" -- "$cur") )
       fi
       ;;
     move|mv)

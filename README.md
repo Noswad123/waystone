@@ -43,9 +43,42 @@ WAYSTONE_INSTALL_COMPLETIONS=0 ./install.sh
 waystone add ~/Projects/app app
 waystone list
 waystone pick
+waystone select
+waystone select --action
 waystone nvim
 waystone open less
 ```
+
+In the open picker, Waystone starts in selection mode instead of focusing search:
+
+- `/` enters search mode; `Esc` returns to selection mode
+- `Esc` quits from selection mode
+- `?` opens the full keybinding help popup
+
+The full keybinding popup includes mutations like `r` to rename a selected entry's label and/or path, and `n` to create a new entry. These open a small form where `Tab` moves between label and path, `Enter` saves, and `Esc` cancels. New entries require a path; when the label is left blank, Waystone uses the resolved path as the label.
+
+`waystone select --action` is the machine-readable picker mode for editor adapters. It prints one TSV row:
+
+```text
+open<TAB>/path/to/file
+edit<TAB>/path/to/file
+edit-return<TAB>/path/to/file
+```
+
+## Neovim
+
+An fzf-backed Neovim adapter is available at `contrib/nvim/waystone.lua`. Put it with your Neovim plugins/config, then load it:
+
+```lua
+require("waystone").setup()
+```
+
+Commands:
+
+- `:Waystone` opens the Waystone picker in a floating terminal.
+- `:WaystoneAddCurrent [label]` saves the current buffer path.
+
+Inside Neovim, `Enter`/`e` opens the selected file in the current window. `E` adds the selected file to the buffer list and reopens Waystone so you can keep selecting files.
 
 ## State
 

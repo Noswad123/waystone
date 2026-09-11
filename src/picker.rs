@@ -5,6 +5,8 @@ use crate::Result;
 
 pub(crate) const PREVIEW_SCRIPT: &str = r#"label={2}; path={3}; created={4}; note={5}; display_path=$path; case "$path" in "$HOME") display_path="~" ;; "$HOME"/*) display_path="~/${path#"$HOME"/}" ;; esac; cols=${FZF_PREVIEW_COLUMNS:-80}; case "$cols" in ""|*[!0-9]*) cols=80 ;; esac; [ "$cols" -gt 1 ] && cols=$((cols - 1)); sep=; i=0; while [ "$i" -lt "$cols" ]; do sep="${sep}-"; i=$((i + 1)); done; printf "Label: %s\nPath: %s\nCreated: %s\n" "$label" "$display_path" "$created"; [ -n "$note" ] && printf "Note: %s\n" "$note"; printf "\n%s\n" "$sep"; if [ -d "$path" ]; then /bin/ls -la "$path"; elif command -v bat >/dev/null 2>&1; then bat --style=numbers --color=always "$path"; else /bin/cat "$path"; fi"#;
 
+pub(crate) const HELP_POPUP_SCRIPT: &str = r#"printf '%s\n' 'Selection mode' '  j/k or ↑/↓   move selection' '  Enter        open selected waystone' '  /            search' '  e            edit file and exit waystone' '  E            edit file and return to waystone' '  d            delete waystone from the list' '  r            rename waystone label and/or path' '  n            create a new waystone entry' '  Esc          quit waystone' '' 'Search mode' '  type         filter waystones' '  Enter        open selected waystone' '  Esc          return to selection mode' '' 'Help' '  ?            show/close this help' | fzf --height=60% --layout=reverse --border=rounded --border-label=' waystone keybindings ' --no-input --prompt='' --header='Press Esc, Enter, or ? to close' --bind 'enter:abort' --bind 'esc:abort' --bind '?:abort'"#;
+
 fn style_args() -> Vec<String> {
     [
         "--height=90%",

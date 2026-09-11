@@ -6,3 +6,4 @@ license = "MIT"
 description = "Save, fuzzy-pick, copy, and open frequently used paths."
 
 [dependencies]
+crossterm = "0.28"

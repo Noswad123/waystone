@@ -1,5 +1,6 @@
 mod app;
 mod commands;
+mod form;
 mod picker;
 mod process;
 mod record;

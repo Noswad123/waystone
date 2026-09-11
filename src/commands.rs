@@ -6,7 +6,8 @@ use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use crate::app::App;
+use crate::app::{App, WaystonePickerAction, WaystonePickerMode};
+use crate::form::entry_form;
 use crate::process::{command_resolves, notify, pipe_to, prompt, run_capture};
 use crate::record::{field, selected_line_number};
 use crate::time::capture_stamp;
@@ -22,10 +23,24 @@ impl App {
         let label = args
             .get(1)
             .cloned()
-            .unwrap_or_else(|| self.display_path(&path));
+            .unwrap_or_else(|| path.display().to_string());
         self.append_waystone(&path, &label, "")?;
         println!("Marked: {} -> {}", label, path.display());
         Ok(())
+    }
+
+    fn new_entry_form(&self) -> Result<Option<String>> {
+        let Some(form) = entry_form("New waystone", "", "", true)? else {
+            return Ok(None);
+        };
+        let path = self.resolve_path(form.path.trim())?;
+        let label = if form.label.trim().is_empty() {
+            path.display().to_string()
+        } else {
+            form.label
+        };
+        self.append_waystone(&path, &label, "")?;
+        Ok(Some(format!("Marked: {} -> {}", label, path.display())))
     }
 
     fn cmd_capture(&self, args: &[String]) -> Result<()> {
@@ -108,8 +123,30 @@ impl App {
         Ok(())
     }
 
+    fn cmd_select(&self, args: &[String]) -> Result<()> {
+        match args.first().map(String::as_str) {
+            Some("--action") => {
+                if let Some((action, path)) = self.run_editor_action_picker()? {
+                    println!("{action}\t{path}");
+                }
+                Ok(())
+            }
+            Some("-h" | "--help") => {
+                eprintln!("Usage: {} select [--action]", self.command_name);
+                Ok(())
+            }
+            Some(other) => Err(format!("waystone: unknown select option: {other}").into()),
+            None => {
+                println!("{}", self.select_waystone_path()?);
+                Ok(())
+            }
+        }
+    }
+
     fn cmd_open(&self, args: &[String]) -> Result<()> {
-        let path = self.select_waystone_path()?;
+        let Some(path) = self.run_open_picker()? else {
+            return Ok(());
+        };
         let mut command: Vec<String> = if args.is_empty() {
             vec![self.select_open_command()?]
         } else {
@@ -120,6 +157,107 @@ impl App {
         let program = command.remove(0);
         let err = Command::new(program).args(command).exec();
         Err(Box::new(err))
+    }
+
+    fn run_open_picker(&self) -> Result<Option<String>> {
+        let mut mode = WaystonePickerMode::Select;
+        let mut filtered_rows: Option<String> = None;
+        loop {
+            match self.select_waystone_action(mode, filtered_rows.as_deref())? {
+                WaystonePickerAction::Open(path) => return Ok(Some(path)),
+                WaystonePickerAction::Search => {
+                    filtered_rows = None;
+                    mode = WaystonePickerMode::Search;
+                }
+                WaystonePickerAction::BackToSelection(query) => {
+                    let matches = self.filtered_rows(&query)?.join("\n");
+                    filtered_rows = if matches.is_empty() {
+                        None
+                    } else {
+                        Some(matches)
+                    };
+                    mode = WaystonePickerMode::Select;
+                }
+                WaystonePickerAction::EditAndExit(path) => {
+                    self.edit_target(&path)?;
+                    return Ok(None);
+                }
+                WaystonePickerAction::EditAndReturn(path) => {
+                    self.edit_target(&path)?;
+                    filtered_rows = None;
+                    mode = WaystonePickerMode::Select;
+                }
+                WaystonePickerAction::Delete(line_number) => {
+                    self.remove_line_number(line_number)?;
+                    println!("Removed waystone {line_number}");
+                    filtered_rows = None;
+                    mode = WaystonePickerMode::Select;
+                }
+                WaystonePickerAction::Rename(line_number) => {
+                    if let Some(message) = self.rename_line_number_form(line_number)? {
+                        println!("{message}");
+                    }
+                    filtered_rows = None;
+                    mode = WaystonePickerMode::Select;
+                }
+                WaystonePickerAction::NewEntry => {
+                    if let Some(message) = self.new_entry_form()? {
+                        println!("{message}");
+                    }
+                    filtered_rows = None;
+                    mode = WaystonePickerMode::Select;
+                }
+                WaystonePickerAction::Cancel => return Err("waystone: selection cancelled".into()),
+            }
+        }
+    }
+
+    fn run_editor_action_picker(&self) -> Result<Option<(&'static str, String)>> {
+        let mut mode = WaystonePickerMode::Select;
+        let mut filtered_rows: Option<String> = None;
+        loop {
+            match self.select_waystone_action(mode, filtered_rows.as_deref())? {
+                WaystonePickerAction::Open(path) => return Ok(Some(("open", path))),
+                WaystonePickerAction::Search => {
+                    filtered_rows = None;
+                    mode = WaystonePickerMode::Search;
+                }
+                WaystonePickerAction::BackToSelection(query) => {
+                    let matches = self.filtered_rows(&query)?.join("\n");
+                    filtered_rows = if matches.is_empty() {
+                        None
+                    } else {
+                        Some(matches)
+                    };
+                    mode = WaystonePickerMode::Select;
+                }
+                WaystonePickerAction::EditAndExit(path) => return Ok(Some(("edit", path))),
+                WaystonePickerAction::EditAndReturn(path) => {
+                    return Ok(Some(("edit-return", path)))
+                }
+                WaystonePickerAction::Delete(line_number) => {
+                    self.remove_line_number(line_number)?;
+                    eprintln!("Removed waystone {line_number}");
+                    filtered_rows = None;
+                    mode = WaystonePickerMode::Select;
+                }
+                WaystonePickerAction::Rename(line_number) => {
+                    if let Some(message) = self.rename_line_number_form(line_number)? {
+                        eprintln!("{message}");
+                    }
+                    filtered_rows = None;
+                    mode = WaystonePickerMode::Select;
+                }
+                WaystonePickerAction::NewEntry => {
+                    if let Some(message) = self.new_entry_form()? {
+                        eprintln!("{message}");
+                    }
+                    filtered_rows = None;
+                    mode = WaystonePickerMode::Select;
+                }
+                WaystonePickerAction::Cancel => return Ok(None),
+            }
+        }
     }
 
     fn cmd_remove(&self) -> Result<()> {
@@ -143,6 +281,15 @@ impl App {
         Ok(())
     }
 
+    fn remove_line_number(&self, line_number: usize) -> Result<()> {
+        let mut records = self.read_records()?;
+        if line_number == 0 || line_number > records.len() {
+            return Err("waystone: selected row no longer exists".into());
+        }
+        records.remove(line_number - 1);
+        self.write_records(&records)
+    }
+
     fn cmd_prune(&self) -> Result<()> {
         let mut removed = 0usize;
         let records: Vec<_> = self
@@ -162,8 +309,17 @@ impl App {
     }
 
     fn cmd_edit(&self) -> Result<()> {
-        let editor = env::var("EDITOR").unwrap_or_else(|_| "nvim".to_string());
-        let status = Command::new(editor).arg(&self.file).status()?;
+        self.edit_target(&self.file.display().to_string())
+    }
+
+    fn edit_target(&self, target: &str) -> Result<()> {
+        let shell = env::var("SHELL").unwrap_or_else(|_| "sh".to_string());
+        let status = Command::new(shell)
+            .arg("-c")
+            .arg("exec ${EDITOR:-nvim} \"$1\"")
+            .arg("waystone-editor")
+            .arg(target)
+            .status()?;
         if status.success() {
             Ok(())
         } else {
@@ -188,6 +344,25 @@ impl App {
         self.write_records(&records)?;
         println!("Relabeled waystone {line_number} -> {new_label}");
         Ok(())
+    }
+
+    fn rename_line_number_form(&self, line_number: usize) -> Result<Option<String>> {
+        let records = self.read_records()?;
+        let record = records
+            .get(line_number - 1)
+            .ok_or("waystone: selected row no longer exists")?;
+        let Some(form) = entry_form("Rename waystone", &record.label, &record.path, true)? else {
+            return Ok(None);
+        };
+
+        let mut records = records;
+        let record = records
+            .get_mut(line_number - 1)
+            .ok_or("waystone: selected row no longer exists")?;
+        record.label = form.label;
+        record.path = self.resolve_path(form.path.trim())?.display().to_string();
+        self.write_records(&records)?;
+        Ok(Some(format!("Renamed waystone {line_number}")))
     }
 
     fn cmd_note(&self, args: &[String]) -> Result<()> {
@@ -255,6 +430,7 @@ impl App {
             "import" => self.cmd_import(),
             "list" => self.cmd_list(),
             "pick" => self.cmd_pick(),
+            "select" => self.cmd_select(&args[1..]),
             "open" => self.cmd_open(&args[1..]),
             "remove" | "rm" => self.cmd_remove(),
             "prune" => self.cmd_prune(),

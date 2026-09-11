@@ -9,6 +9,7 @@ _waystone() {
     'import:add newline-delimited paths from stdin'
     'list:print saved waystones'
     'pick:fuzzy-pick a waystone and copy its path'
+    'select:fuzzy-pick and print a path or editor action'
     'open:fuzzy-pick a waystone and open it'
     'remove:fuzzy-select waystones to remove'
     'rm:fuzzy-select waystones to remove'
@@ -46,6 +47,9 @@ _waystone() {
           _alternative \
             'openers:opener:_describe -t openers "openers" openers' \
             'commands:command:_command_names'
+          ;;
+        select)
+          _arguments '1:option:(--action)'
           ;;
         move|mv)
           _arguments '1:destination directory:_files -/'

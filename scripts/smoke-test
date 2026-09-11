@@ -8,6 +8,7 @@ bin="$repo_root/target/debug/waystone"
 
 sample="$tmpdir/source.txt"
 printf 'sample content\n' >"$sample"
+sample_resolved="$(cd "$(dirname "$sample")" && pwd -P)/$(basename "$sample")"
 
 cargo test --manifest-path "$repo_root/Cargo.toml"
 cargo build --manifest-path "$repo_root/Cargo.toml"
@@ -23,6 +24,16 @@ esac
 
 if command -v fzf >/dev/null 2>&1; then
   WAYSTONE_DIR="$tmpdir/state" WAYSTONE_FILE="$tmpdir/state/paths.tsv" FZF_DEFAULT_OPTS='--filter Sample --no-sort' "$bin" /usr/bin/true
+  select_output="$(WAYSTONE_DIR="$tmpdir/state" WAYSTONE_FILE="$tmpdir/state/paths.tsv" FZF_DEFAULT_OPTS='--filter Sample --no-sort' "$bin" select)"
+  case "$select_output" in
+    "$sample_resolved") ;;
+    *) printf 'expected select to print sample path\n' >&2; exit 1 ;;
+  esac
+  action_output="$(WAYSTONE_DIR="$tmpdir/state" WAYSTONE_FILE="$tmpdir/state/paths.tsv" FZF_DEFAULT_OPTS='--filter Sample --no-sort' "$bin" select --action)"
+  case "$action_output" in
+    "open"$'\t'"$sample_resolved") ;;
+    *) printf 'expected select --action to print open action\n' >&2; exit 1 ;;
+  esac
 fi
 
 if command -v shellcheck >/dev/null 2>&1; then
