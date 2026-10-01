@@ -1,3 +1,6 @@
+# shellcheck shell=bash
+# shellcheck disable=SC2207
+
 _waystone_completion() {
   local cur subcommand
   COMPREPLY=()
@@ -5,7 +8,7 @@ _waystone_completion() {
   subcommand="${COMP_WORDS[1]:-}"
 
   local subcommands="add capture import list pick select open remove rm prune edit relabel label note move mv help --help -h"
-  local openers="nvim vim less bat yazi"
+  local openers="nvim vim less bat jless jq wyrm py"
 
   if [[ $COMP_CWORD -eq 1 ]]; then
     COMPREPLY=( $(compgen -W "$subcommands $openers" -- "$cur") )

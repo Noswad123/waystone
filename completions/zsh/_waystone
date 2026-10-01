@@ -28,7 +28,10 @@ _waystone() {
     'vim:open selected path with Vim'
     'less:open selected path with less'
     'bat:open selected path with bat'
-    'yazi:open selected path with Yazi'
+    'jless:open selected path with jless'
+    'jq:open selected path with jq'
+    'wyrm:open selected path with Wyrm'
+    'py:open selected path with py'
   )
 
   case $CURRENT in

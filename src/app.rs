@@ -61,7 +61,7 @@ impl App {
             .map(PathBuf::from)
             .unwrap_or_else(|| dir.join("paths.tsv"));
         let open_commands = env::var("WAYSTONE_OPEN_COMMANDS")
-            .unwrap_or_else(|_| "nvim less bat yazi".to_string())
+            .unwrap_or_else(|_| "nvim less bat jless jq wyrm py".to_string())
             .split_whitespace()
             .map(str::to_string)
             .collect();

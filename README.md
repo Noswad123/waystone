@@ -49,6 +49,19 @@ waystone nvim
 waystone open less
 ```
 
+When `waystone` or `waystone open` is run without an explicit opener, Waystone
+shows an opener picker. The default opener list is:
+
+```text
+nvim less bat jless jq wyrm py
+```
+
+Override it with:
+
+```bash
+WAYSTONE_OPEN_COMMANDS="nvim less bat jless jq wyrm py" waystone open
+```
+
 In the open picker, Waystone starts in selection mode instead of focusing search:
 
 - `/` enters search mode; `Esc` returns to selection mode
@@ -99,7 +112,7 @@ WAYSTONE_FILE=/path/to/paths.tsv waystone list
 - Rust/Cargo to build from source
 - `fzf`
 - macOS `pbcopy` for clipboard support
-- optional openers like `nvim`, `less`, `bat`, `yazi`
+- optional openers like `nvim`, `less`, `bat`, `jless`, `jq`, `wyrm`, `py`
 
 ## License
 
